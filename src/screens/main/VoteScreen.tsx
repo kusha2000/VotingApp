@@ -259,6 +259,7 @@ const VoteScreen: React.FC = () => {
                                     voteStats={voteStats}
                                     userVote={userVote}
                                     onVote={() => { }}
+                                    onComment={() => { }}
                                 />
                             );
                         })}

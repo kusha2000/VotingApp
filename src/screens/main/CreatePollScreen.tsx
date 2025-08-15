@@ -18,6 +18,7 @@ import { createPoll } from '../../services/pollService';
 import { PollOption, PollCategory, POLL_CATEGORIES } from '../../types';
 import { colors, theme } from '../../styles/colors';
 import { pickImage, takePhoto } from '../../utils/imageUtils';
+import Comments from '../../components/Comments';
 
 interface CreatePollScreenProps {
     navigation: any;

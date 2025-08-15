@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
-import { getPolls } from '../../services/pollService';
+import { addComment, getComments, getPolls } from '../../services/pollService';
 import { castVote, getUserVote, subscribeToVotes } from '../../services/voteService';
 import { Poll, PollCategory, POLL_CATEGORIES } from '../../types';
 import PollCard from '../../components/PollCard';
@@ -33,26 +33,36 @@ const HomeScreen: React.FC = () => {
     const [selectedCategory, setSelectedCategory] = useState<PollCategory | null>(null);
     const [searchFocused, setSearchFocused] = useState(false);
     const searchAnimation = useState(new Animated.Value(0))[0];
+    const [newComments, setNewComments] = useState("");
+    const [pollComments, setPollComments] = useState<{ [pollId: string]: any[] }>({});
 
     const fetchPolls = async () => {
         try {
             const pollsData = await getPolls();
             setPolls(pollsData);
-            setFilteredPolls(pollsData);
+
+            const commentsMap: { [pollId: string]: any[] } = {};
+            const votes: { [pollId: string]: string } = {};
 
             if (user) {
-                const votes: { [pollId: string]: string } = {};
                 for (const poll of pollsData) {
+                    // Get user vote
                     const userVote = await getUserVote(poll.id, user.uid);
                     if (userVote) {
                         votes[poll.id] = userVote;
                     }
+
+                    // Get comments for this poll
+                    const comments = await getComments(poll.id);
+                    commentsMap[poll.id] = comments || [];
                 }
-                setUserVotes(votes);
             }
+
+            setUserVotes(votes);
+            setPollComments(commentsMap);
+
         } catch (error) {
             console.error('Error fetching polls:', error);
-            Alert.alert('Error', 'Failed to fetch polls');
         } finally {
             setLoading(false);
         }
@@ -163,6 +173,27 @@ const HomeScreen: React.FC = () => {
                 ...prev,
                 [pollId]: optionId
             }));
+
+            if (!newComments) {
+                return;
+            }
+
+            await addComment(pollId, user.uid, newComments);
+            setNewComments("");
+
+            Alert.alert('Success', 'Your vote has been recorded!');
+        } catch (error) {
+            console.error('Error casting vote:', error);
+            Alert.alert('Error', 'Failed to cast vote');
+        }
+    };
+    const handleComment = async (pollId: string, comment: string) => {
+        if (!user) return;
+
+        try {
+
+            await addComment(pollId, user.uid, comment);
+            setNewComments("");
 
             Alert.alert('Success', 'Your vote has been recorded!');
         } catch (error) {
@@ -385,6 +416,7 @@ const HomeScreen: React.FC = () => {
                         {filteredPolls.map((poll) => {
                             const voteStats = calculateVotePercentages(poll.id, poll);
                             const userVote = userVotes[poll.id];
+                                const comments = pollComments[poll.id] || [];
 
                             return (
                                 <PollCard
@@ -392,7 +424,10 @@ const HomeScreen: React.FC = () => {
                                     poll={poll}
                                     voteStats={voteStats}
                                     userVote={userVote}
+                                    comments={comments}
                                     onVote={(optionId) => handleVote(poll.id, optionId)}
+                                    onComment={(comment) => handleComment(poll.id, comment)}
+
                                 />
                             );
                         })}

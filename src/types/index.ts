@@ -19,6 +19,7 @@ export interface Poll {
     totalVotes: number;
     image?: string;
     category: PollCategory;
+    comments?: Comments[];
 }
 
 export interface PollOption {
@@ -76,3 +77,11 @@ export const POLL_CATEGORIES: CategoryOption[] = [
     { id: PollCategory.ENTERTAINMENT, label: 'Entertainment', icon: 'musical-notes-outline', color: '#9b59b6' },
     { id: PollCategory.OTHER, label: 'Other', icon: 'ellipsis-horizontal-outline', color: '#95a5a6' },
 ];
+
+export interface Comments {
+    id: String;
+    userId: String;
+    userName: String;
+    comment: String;
+    createAt: Date;
+} 

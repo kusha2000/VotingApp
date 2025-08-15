@@ -6,26 +6,38 @@ import {
     StyleSheet,
     Image,
     Animated,
+    TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Poll, Voter } from '../types';
+import { Comments, Poll, Voter } from '../types';
 import { colors, theme } from '../styles/colors';
 
 interface PollCardProps {
     poll: Poll;
     voteStats: { count: number; percentage: number; voters: Voter[] }[];
     userVote?: string;
-    onVote: (optionId: string) => void;
+    comments?: Comments[],
+    onVote: (optionId: string,) => void;
+    onComment: (comment: string,) => void;
 }
 
 const PollCard: React.FC<PollCardProps> = ({
     poll,
     voteStats,
     userVote,
+    comments,
     onVote,
+    onComment
 }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [expandAnimation] = useState(new Animated.Value(0));
+    const [newComments, setNewComments] = useState("");
+    const handleSubmit = () => {
+        if (!newComments.trim()) return; // avoid empty submissions
+        console.log('Submitted comment:', newComments);
+        onComment(newComments);
+        setNewComments('');
+    };
 
     const totalVotes = voteStats.reduce((sum, stat) => sum + stat.count, 0);
     const hasVoted = !!userVote;
@@ -141,6 +153,10 @@ const PollCard: React.FC<PollCardProps> = ({
                                 <Text style={styles.votedText}>You voted</Text>
                             </View>
                         )}
+                    </View>
+
+                    <View>
+
                     </View>
 
                     <View style={styles.expandButton}>
@@ -262,6 +278,30 @@ const PollCard: React.FC<PollCardProps> = ({
                             </TouchableOpacity>
                         );
                     })}
+                </View>
+                <View style={styles.commentsContainer}>
+                    {!comments || comments.length === 0 ? (
+                        <Text style={styles.noCommentsText}>No comments yet.</Text>
+                    ) : (
+                        comments.map(comment => (
+                            <View key={comment.id.toString()} style={styles.commentItem}>
+                                {/* If you have userName saved in comment, use it, else fallback to userId */}
+                                <Text style={styles.commentUser}>{comment.userName || comment.userId}:</Text>
+                                <Text style={styles.commentText}>{comment.comment}</Text>  {/* note: comment.comment */}
+                            </View>
+                        ))
+                    )}
+                </View>
+                <View style={styles.commentRow}>
+                    <TextInput
+                        value={newComments}
+                        onChangeText={setNewComments}
+                        placeholder="Write a comment..."
+                        style={styles.commentInput}
+                    />
+                    <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+                        <Text style={styles.submitButtonText}>Comment</Text>
+                    </TouchableOpacity>
                 </View>
             </Animated.View>
         </View>
@@ -470,6 +510,59 @@ const styles = StyleSheet.create({
         height: '100%',
         borderRadius: theme.borderRadius.md - 2,
     },
+    commentRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 8,
+    },
+    commentInput: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 6,
+        marginRight: 8,
+    },
+    submitButton: {
+        backgroundColor: '#007AFF',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 6,
+    },
+    submitButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    commentsContainer: {
+        marginTop: 12,
+        paddingHorizontal: 12,
+        maxHeight: 200,
+    },
+
+    commentItem: {
+        flexDirection: 'row',
+        marginBottom: 8,
+    },
+
+    commentUser: {
+        fontWeight: 'bold',
+        marginRight: 6,
+        color: colors.primary,
+    },
+
+    commentText: {
+        flex: 1,
+        color: colors.text,
+    },
+
+    noCommentsText: {
+        fontStyle: 'italic',
+        color: colors.textSecondary,
+        paddingHorizontal: 12,
+    },
+
+
 });
 
 export default PollCard;
